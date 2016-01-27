@@ -110,7 +110,7 @@ class HTTPClient(object):
         code = self.get_code(response)
         body = self.get_body(response)
         headers = self.get_headers(response)
-
+        #print code
         print(body)
 
         return HTTPResponse(code, body)
