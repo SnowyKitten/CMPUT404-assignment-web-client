@@ -141,6 +141,7 @@ class HTTPClient(object):
     def POST(self, url, args=None):
         code = 500
         body = ""
+	post_body = ""
 
 	if args != None:
 	    post_body = urllib.urlencode(args)
@@ -151,7 +152,7 @@ class HTTPClient(object):
         request = "POST " + path + " HTTP/1.1\n"
         request += "Host: " + host + "\n"
 	request += "Content-Type: application/x-www-form-urlencoded\n"
-	request += "Content-Length:" + str(len(body)) + "\n" 
+	request += "Content-Length:" + str(len(post_body)) + "\n" 
         request += "Connection: close"+"\r\n\r\n"
 
 	request += post_body + "\r\n\r\n"
