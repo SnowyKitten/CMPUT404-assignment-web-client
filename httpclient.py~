@@ -53,12 +53,34 @@ class HTTPClient(object):
             else:
                 break
 
-        # returns tuple of (host, path)
-	#print("host :",url[:counter])
- 	#print("path :",url[counter:])
+	host_port = url[:counter]
+	port = 80
+
+	if "http://" in host_port:
+            host_port = host_port[7:]
+        elif "https://" in host_port:
+            host_port = host_port[8:]
+
+	print("host_port",host_port)
+	if ":" in host_port:
+            host_port = host_port.split(":")
+            port = host_port[-1]
+            host = ":".join(host_port[:-1])
+        else:
+	    temp = host_port.split("//")
+            host = temp[-1]
+
+	temphost=""
+	for letter in host:
+	    if letter != "/":
+	        temphost += letter
+	host= temphost
+
+
+        # returns tuple of (host, port, path)
 	if (url[counter:] == ""):
-            return (url[:counter],"/")
-        return (url[:counter],url[counter:])
+            return (host, port,"/")
+        return (host, port, url[counter:])
 
     def connect(self, host, port):
         clientSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -96,31 +118,12 @@ class HTTPClient(object):
         code = 500
         body = ""
 
-        host_port, path = self.urlparser(url)
-        port = 8080
-	
-	host= host_port
+        host, port, path = self.urlparser(url)
 
-	if "http://" in host_port:
-            host_port = host_port[7:]
-        elif "https://" in host_port:
-            host = host_port[8:]
-
-	print("host_port",host_port)
-	if ":" in host_port:
-            host_port = host_port.split(":")
-            port = host_port[-1]
-            host = ":".join(host_port[:-1])
-        else:
-	    temp = host_port.split("//")
-            host = temp[-1]
-
-
-        print host
+        # create HTTP Header
         request = "GET " + path + " HTTP/1.1\n"
-        request = request + "Host: " + host + "\nConnection: close"+"\r\n\r\n"
- 
-	print(request)
+        request += "Host: " + host + "\n" 
+        request += "Connection: close"+"\r\n\r\n"
 
         clientSocket = self.connect(host, int(port))
         clientSocket.sendall(request)
@@ -129,9 +132,9 @@ class HTTPClient(object):
         code = self.get_code(response)
         body = self.get_body(response)
         headers = self.get_headers(response)
-
         clientSocket.close()
-        print(body)
+
+        #print(body)
 
         return HTTPResponse(code, body)
 
@@ -139,24 +142,33 @@ class HTTPClient(object):
     def POST(self, url, args=None):
         code = 500
         body = ""
- 	
-	host_port, path = self.urlparser(url)
-        host_port = host_port.split(":")
-        port = host_port[-1]
-        host = ":".join(host_port[:-1])
-        if "http://" in host:
-            host = host[7:]
-        elif "https://" in host:
-            host = host[8:]
 
-#http://www.w3schools.com/tags/ref_httpmethods.asp
+	if args != None:
+	    body = urllib.urlencode(args)
+	    print body
+
+        host, port, path = self.urlparser(url)
+
+        # create HTTP Header
         request = "POST " + path + " HTTP/1.1\n"
-        request = request + "Host: " + host + "Connection: Close"+"\r\n\r\n"
+        request += "Host: " + host + "\n"
+	request += "Content-Type: application/x-www-form-urlencoded\n"
+	request += "Content-Length:" + str(len(body)) + "\n" 
+        request += "Connection: close"+"\r\n\r\n"
 
-	
- 
-	print(request)
+	request += body + "\r\n\r\n"
 
+        clientSocket = self.connect(host, int(port))
+        clientSocket.sendall(request)
+
+        response = self.recvall(clientSocket)
+	print "here" + response
+        code = self.get_code(response)
+        body = self.get_body(response)
+        headers = self.get_headers(response)
+        clientSocket.close()
+
+        print(body)
 
         return HTTPResponse(code, body)
 
