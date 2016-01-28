@@ -61,7 +61,6 @@ class HTTPClient(object):
         elif "https://" in host_port:
             host_port = host_port[8:]
 
-	print("host_port",host_port)
 	if ":" in host_port:
             host_port = host_port.split(":")
             port = host_port[-1]
@@ -144,8 +143,7 @@ class HTTPClient(object):
         body = ""
 
 	if args != None:
-	    body = urllib.urlencode(args)
-	    print body
+	    post_body = urllib.urlencode(args)
 
         host, port, path = self.urlparser(url)
 
@@ -156,13 +154,12 @@ class HTTPClient(object):
 	request += "Content-Length:" + str(len(body)) + "\n" 
         request += "Connection: close"+"\r\n\r\n"
 
-	request += body + "\r\n\r\n"
+	request += post_body + "\r\n\r\n"
 
         clientSocket = self.connect(host, int(port))
         clientSocket.sendall(request)
 
         response = self.recvall(clientSocket)
-	print "here" + response
         code = self.get_code(response)
         body = self.get_body(response)
         headers = self.get_headers(response)
