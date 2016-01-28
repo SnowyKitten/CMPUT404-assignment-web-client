@@ -36,10 +36,13 @@ class HTTPClient(object):
     #def get_host_port(self,url):
 
     def urlparser(self, url):
+	
         counter = 0
         for i in range(0,len(url)):
             if (url[i] != "/"):
-                counter = counter + 1
+	        counter = counter + 1
+	    elif(i == (len(url)-1)):
+		    break
             # since we are checking indices in python, need to make sure 
             # we stay in scope to avoid bugs, check if we are first or last 
             # element, and then given that we are a "/" character, if the
@@ -51,6 +54,10 @@ class HTTPClient(object):
                 break
 
         # returns tuple of (host, path)
+	#print("host :",url[:counter])
+ 	#print("path :",url[counter:])
+	if (url[counter:] == ""):
+            return (url[:counter],"/")
         return (url[:counter],url[counter:])
 
     def connect(self, host, port):
@@ -90,18 +97,30 @@ class HTTPClient(object):
         body = ""
 
         host_port, path = self.urlparser(url)
-        host_port = host_port.split(":")
-        port = host_port[-1]
-        host = ":".join(host_port[:-1])
-        if "http://" in host:
-            host = host[7:]
-        elif "https://" in host:
-            host = host[8:]
+        port = 80
+	
+	host= host_port
+
+	if "http://" in host_port:
+            host_port = host_port[7:]
+        elif "https://" in host_port:
+            host = host_port[8:]
+
+	print("host_port",host_port)
+	if ":" in host_port:
+            host_port = host_port.split(":")
+            port = host_port[-1]
+            host = ":".join(host_port[:-1])
+        else:
+	    temp = host_port.split("//")
+            host = temp[-1]
 
 
+        print host
         request = "GET " + path + " HTTP/1.1\n"
-        request = request + "Host: " + host + "\n\n"
+        request = request + "Host: " + host + "\nConnection: close"+"\r\n\r\n"
  
+	print(request)
 
         clientSocket = self.connect(host, int(port))
         clientSocket.sendall(request)
@@ -111,6 +130,7 @@ class HTTPClient(object):
         body = self.get_body(response)
         headers = self.get_headers(response)
 
+        clientSocket.close()
         print(body)
 
         return HTTPResponse(code, body)
@@ -119,6 +139,25 @@ class HTTPClient(object):
     def POST(self, url, args=None):
         code = 500
         body = ""
+ 	
+	host_port, path = self.urlparser(url)
+        host_port = host_port.split(":")
+        port = host_port[-1]
+        host = ":".join(host_port[:-1])
+        if "http://" in host:
+            host = host[7:]
+        elif "https://" in host:
+            host = host[8:]
+
+#http://www.w3schools.com/tags/ref_httpmethods.asp
+        request = "POST " + path + " HTTP/1.1\n"
+        request = request + "Host: " + host + "Connection: Close"+"\r\n\r\n"
+
+	
+ 
+	print(request)
+
+
         return HTTPResponse(code, body)
 
     def command(self, url, command="GET", args=None):
